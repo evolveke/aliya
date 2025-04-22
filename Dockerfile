@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libdrm2 \
     libxkbcommon0 \
     libasound2 \
+    libxfixes3 \
     && rm -rf /var/lib/apt/lists/*
 RUN npm install
 COPY . .
