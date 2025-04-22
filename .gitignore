@@ -1,0 +1,13 @@
+# Ignore session/auth/cache data from WhatsApp
+.wwwebjs_auth/
+.wwwebjs_cache/
+
+# Ignore logs
+logs/
+*.log
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables
+.env
