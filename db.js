@@ -17,13 +17,13 @@ const logger = winston.createLogger({
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Always enable SSL for Render
+  ssl: process.env.DATABASE_URL.includes('render.com') ? { rejectUnauthorized: false } : false // Enable SSL only for Render
 });
 
 // Test connection on startup
 pool.connect((err, client, release) => {
   if (err) {
-    logger.error('Database connection error: ' + err.stack);
+    logger.error(`Database connection error: ${err.message}, Host: ${pool.options.host}, Database: ${pool.options.database}`);
     process.exit(1); // Exit process on connection failure
   }
   logger.info('Connected to PostgreSQL database');

@@ -22,8 +22,8 @@ const logger = winston.createLogger({
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'], // Add these args to disable sandboxing
-    headless: true // Ensure headless mode for Railway
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true
   }
 });
 
@@ -260,6 +260,111 @@ const MEDICATION_STEPS = [
     }
   }
 ];
+
+async function initializeDatabase() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        whatsapp_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        age INTEGER NOT NULL,
+        sex VARCHAR(10) NOT NULL,
+        height_cm INTEGER NOT NULL,
+        weight_kg INTEGER NOT NULL,
+        location VARCHAR(100) NOT NULL,
+        medical_history TEXT,
+        chronic_conditions TEXT,
+        allergies TEXT,
+        medications TEXT,
+        menstrual_cycle_type VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS symptoms (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        symptoms TEXT NOT NULL,
+        severity VARCHAR(20) NOT NULL,
+        duration TEXT NOT NULL,
+        diagnosis TEXT,
+        home_care TEXT,
+        red_flags TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS assessments (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        overall_health VARCHAR(20),
+        fatigue_after_sleep VARCHAR(20),
+        fruit_veggie_servings INTEGER,
+        sugary_drinks_snacks VARCHAR(5),
+        exercise_days INTEGER,
+        breaks_from_sitting VARCHAR(5),
+        sleep_hours INTEGER,
+        wake_refreshed VARCHAR(20),
+        stress_anxiety VARCHAR(20),
+        relaxation_techniques VARCHAR(5),
+        chronic_conditions VARCHAR(5),
+        family_history VARCHAR(5),
+        smoking_vaping VARCHAR(5),
+        alcohol_drinks INTEGER,
+        headaches_body_aches VARCHAR(20),
+        weight_changes VARCHAR(5),
+        score INTEGER,
+        analysis TEXT,
+        recommendations TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS fitness_plans (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        fitness_goal VARCHAR(50),
+        activity_level VARCHAR(20),
+        available_days INTEGER,
+        available_minutes INTEGER,
+        fitness_plan TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS meal_plans (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        dietary_preference VARCHAR(50),
+        health_goal VARCHAR(50),
+        meals_per_day INTEGER,
+        meal_plan TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS menstrual_cycles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        last_period_date DATE NOT NULL,
+        average_cycle_length INTEGER NOT NULL,
+        predicted_next_period DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS medication_reminders (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        medication_name VARCHAR(100) NOT NULL,
+        dosage VARCHAR(50) NOT NULL,
+        schedule_time VARCHAR(5) NOT NULL,
+        days_of_week VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    logger.info('Database schema initialized successfully');
+  } catch (err) {
+    logger.error(`Error initializing database schema: ${err.message}`);
+    throw new Error('Database schema initialization failed');
+  }
+}
 
 async function testDatabase() {
   try {
@@ -797,18 +902,24 @@ function calculateHealthScore(data) {
   return score;
 }
 
-client.on('ready', () => {
+client.on('ready', async () => {
   logger.info('WhatsApp client is ready!');
   console.log('WhatsApp client is ready!');
-  testDatabase().catch(err => {
+  try {
+    await testDatabase();
+    await initializeDatabase();
+  } catch (err) {
     logger.error(`Startup error: ${err.message}`);
     process.exit(1);
-  });
+  }
 });
 
 client.on('qr', (qr) => {
   logger.info('QR code generated');
-  qrcode.generate(qr, { small: true });
+  qrcode.generate(qr, { small: true }, (code) => {
+    console.log('QR Code:\n' + code);
+    logger.info('QR Code:\n' + code);
+  });
   console.log('Scan the QR code with your WhatsApp app.');
 });
 
@@ -1344,7 +1455,8 @@ Use /assessment to take another test or /help for other commands.
 
 ${fitnessPlan}
 
-I’ll remind you daily at 7:00 AM to follow this plan. Use /fitness to generate a new plan or /help for other commands.
+⚠️ *Please consult a doctor before starting any fitness program.*
+Use /fitness to generate a new plan or /help for other commands.
         `);
         logger.info(`Sent fitness plan to ${userId}`);
         userState = { state: 'initial', data: {} };
@@ -1396,7 +1508,8 @@ I’ll remind you daily at 7:00 AM to follow this plan. Use /fitness to generate
 
 ${fitnessPlan}
 
-I’ll remind you daily at 7:00 AM to follow this plan. Use /fitness to generate a new plan or /help for other commands.
+⚠️ *Please consult a doctor before starting any fitness program.*
+Use /fitness to generate a new plan or /help for other commands.
         `);
         logger.info(`Sent fitness plan to ${userId}`);
         userState = { state: 'initial', data: {} };
@@ -1437,7 +1550,8 @@ I’ll remind you daily at 7:00 AM to follow this plan. Use /fitness to generate
 
 ${mealPlan}
 
-I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a new plan or /help for other commands.
+⚠️ *Please consult a doctor or nutritionist before starting any diet plan.*
+Use /meal to generate a new plan or /help for other commands.
         `);
         logger.info(`Sent meal plan to ${userId}`);
         userState = { state: 'initial', data: {} };
@@ -1489,7 +1603,8 @@ I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a 
 
 ${mealPlan}
 
-I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a new plan or /help for other commands.
+⚠️ *Please consult a doctor or nutritionist before starting any diet plan.*
+Use /meal to generate a new plan or /help for other commands.
         `);
         logger.info(`Sent meal plan to ${userId}`);
         userState = { state: 'initial', data: {} };
@@ -1507,7 +1622,7 @@ I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a 
       } else if (userMessage === 'no') {
         userState = { state: 'initial', data: {} };
         userStates.set(userId, userState);
-        await message.reply('Got it. Your cycle data remains unchanged. Use /cycle to update later or /help for other commands.');
+        await message.reply('Got it. Your cycle data remains unchanged. Use /cycle to update anytime or /help for other commands.');
         logger.info(`User ${userId} chose not to update cycle data`);
       } else {
         await message.reply('Please reply with *yes* or *no*.');
@@ -1522,8 +1637,8 @@ I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a 
 
       if (currentStep >= steps.length) {
         const lastPeriodDate = userState.data.last_period_date;
-        const averageCycleLength = userState.data.average_cycle_length;
-        const predictedNextPeriod = calculateNextPeriod(lastPeriodDate, averageCycleLength);
+        const cycleLength = userState.data.average_cycle_length;
+        const predictedNextPeriod = calculateNextPeriod(lastPeriodDate, cycleLength);
 
         userState.data.predicted_next_period = predictedNextPeriod;
 
@@ -1542,135 +1657,12 @@ I’ll remind you daily at 8:00 AM to follow this plan. Use /meal to generate a 
 *Menstrual Cycle Tracking*
 
 - Last Period: ${lastPeriodDate}
-- Average Cycle Length: ${averageCycleLength} days
+- Average Cycle Length: ${cycleLength} days
 - Predicted Next Period: ${predictedNextPeriod}
 
-I'll remind you 3 days before your predicted period. Use /cycle to update your details or /help for other commands.
+I’ll remind you 3 days before your predicted next period. Use /cycle to update your details or /help for other commands.
         `);
-        logger.info(`Sent cycle tracking results to ${userId}`);
-        userState = { state: 'initial', data: {} };
-        userStates.set(userId, userState);
-        return;
-      }
-
-      const step = steps[currentStep];
-      const validationError = step.validate(userMessage);
-
-      if (validationError) {
-        await message.reply(validationError);
-        logger.info(`Validation error for ${userId} on ${step.field}: ${userMessage}`);
-        return;
-      }
-
-      userState.data[step.field] = userMessage;
-      userState.step = currentStep + 1;
-      userStates.set(userId, userState);
-
-      if (userState.step < steps.length) {
-        await message.reply(steps[userState.step].prompt);
-        logger.info(`Prompted ${userId} for ${steps[userState.step].field}`);
-      } else {
-        const lastPeriodDate = userState.data.last_period_date;
-        const averageCycleLength = userState.data.average_cycle_length;
-        const predictedNextPeriod = calculateNextPeriod(lastPeriodDate, averageCycleLength);
-
-        userState.data.predicted_next_period = predictedNextPeriod;
-
-        const saved = await saveMenstrualCycle(userId, userState.data);
-        if (!saved) {
-          await message.reply('Error saving your cycle data. Please try again with /cycle.');
-          logger.error(`Failed to save cycle data for ${userId}`);
-          userState = { state: 'initial', data: {} };
-          userStates.set(userId, userState);
-          return;
-        }
-
-        schedulePeriodReminder(userId, predictedNextPeriod);
-
-        await message.reply(`
-*Menstrual Cycle Tracking*
-
-- Last Period: ${lastPeriodDate}
-- Average Cycle Length: ${averageCycleLength} days
-- Predicted Next Period: ${predictedNextPeriod}
-
-I'll remind you 3 days before your predicted period. Use /cycle to update your details or /help for other commands.
-        `);
-        logger.info(`Sent cycle tracking results to ${userId}`);
-        userState = { state: 'initial', data: {} };
-        userStates.set(userId, userState);
-      }
-      return;
-    }
-
-    if (userState.state === 'medication_choice') {
-      if (userMessage === 'add') {
-        userState = { state: 'medication_setup', data: {}, step: 0 };
-        userStates.set(userId, userState);
-        await message.reply(MEDICATION_STEPS[0].prompt);
-        logger.info(`User ${userId} chose to add a new medication reminder`);
-      } else if (userMessage === 'update') {
-        let reminderList = '*Which medication would you like to update?*\n\n';
-        userState.data.existingReminders.forEach((r, index) => {
-          reminderList += `${index + 1}. ${r.medication_name}: ${r.dosage} at ${r.schedule_time} on ${r.days_of_week}\n`;
-        });
-        reminderList += '\nReply with the number of the medication to update (e.g., 1).';
-        userState = { state: 'medication_select_update', data: userState.data };
-        userStates.set(userId, userState);
-        await message.reply(reminderList);
-        logger.info(`Prompted ${userId} to select medication to update`);
-      } else {
-        await message.reply('Please reply with *add* or *update*.');
-        logger.info(`Invalid medication choice from ${userId}: ${userMessage}`);
-      }
-      return;
-    }
-
-    if (userState.state === 'medication_select_update') {
-      const selectedIndex = parseInt(userMessage) - 1;
-      const reminders = userState.data.existingReminders;
-
-      if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= reminders.length) {
-        await message.reply('Please reply with a valid number from the list.');
-        logger.info(`Invalid medication selection from ${userId}: ${userMessage}`);
-        return;
-      }
-
-      userState.data.selectedMedication = reminders[selectedIndex].medication_name;
-      userState = { state: 'medication_setup', data: { medication_name: reminders[selectedIndex].medication_name }, step: 1 };
-      userStates.set(userId, userState);
-      await message.reply(MEDICATION_STEPS[1].prompt);
-      logger.info(`User ${userId} selected medication ${reminders[selectedIndex].medication_name} to update`);
-      return;
-    }
-
-    if (userState.state === 'medication_setup') {
-      const currentStep = userState.step;
-      const steps = MEDICATION_STEPS;
-
-      if (currentStep >= steps.length) {
-        const saved = await saveMedicationReminder(userId, userState.data);
-        if (!saved) {
-          await message.reply('Error saving your medication reminder. Please try again with /medication.');
-          logger.error(`Failed to save medication reminder for ${userId}`);
-          userState = { state: 'initial', data: {} };
-          userStates.set(userId, userState);
-          return;
-        }
-
-        scheduleMedicationReminder(userId, userState.data);
-
-        await message.reply(`
-*Medication Reminder Set*
-
-- Medication: ${userState.data.medication_name}
-- Dosage: ${userState.data.dosage}
-- Time: ${userState.data.schedule_time}
-- Days: ${userState.data.days_of_week}
-
-I'll remind you as scheduled. Use /medication to add or update reminders, or /help for other commands.
-        `);
-        logger.info(`Set medication reminder for ${userId}: ${userState.data.medication_name}`);
+        logger.info(`Saved and scheduled reminder for cycle data for ${userId}`);
         userState = { state: 'initial', data: {} };
         userStates.set(userId, userState);
         return;
