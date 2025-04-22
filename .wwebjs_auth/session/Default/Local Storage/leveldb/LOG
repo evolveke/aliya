@@ -1,3 +1,6 @@
-2025/04/22-12:39:54.969 52bc Reusing MANIFEST C:\Users\Administrator\Downloads\aliya-health-bot\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
-2025/04/22-12:39:54.971 52bc Recovering log #7
-2025/04/22-12:39:54.973 52bc Reusing old log C:\Users\Administrator\Downloads\aliya-health-bot\.wwebjs_auth\session\Default\Local Storage\leveldb/000007.log 
+2025/04/22-13:12:11.669 56d4 Reusing MANIFEST C:\Users\Administrator\Downloads\aliya-health-bot\.wwebjs_auth\session\Default\Local Storage\leveldb/MANIFEST-000001
+2025/04/22-13:12:11.670 56d4 Recovering log #7
+2025/04/22-13:12:11.671 56d4 Reusing old log C:\Users\Administrator\Downloads\aliya-health-bot\.wwebjs_auth\session\Default\Local Storage\leveldb/000007.log 
+2025/04/22-13:14:14.698 4bb4 Level-0 table #11: started
+2025/04/22-13:14:14.702 4bb4 Level-0 table #11: 13719 bytes OK
+2025/04/22-13:14:14.705 4bb4 Delete type=0 #7

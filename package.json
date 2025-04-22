@@ -1,25 +1,20 @@
 {
   "name": "aliya-health-bot",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  
-  
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "cohere-ai": "^7.9.3",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.4.5",
     "node-schedule": "^2.1.1",
-    "pg": "^8.14.1",
-    "puppeteer": "^21.0.0",
+    "pg": "^8.13.0",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.27.0",
-    "winston": "^3.17.0"
+    "whatsapp-web.js": "^1.26.0",
+    "winston": "^3.15.0",
+    "puppeteer": "^23.5.3"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
