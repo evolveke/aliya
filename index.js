@@ -308,13 +308,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS whatsapp_sessions (
-        id SERIAL PRIMARY KEY,
-        user_id VARCHAR(50) UNIQUE NOT NULL,
-        session_data JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      
 
       CREATE TABLE IF NOT EXISTS symptoms (
         id SERIAL PRIMARY KEY,
@@ -949,15 +943,6 @@ client.on('ready', async () => {
   }
 });
 
-client.on('auth_failure', (msg) => {
-  logger.error(`Authentication failure: ${msg}`);
-});
-
-client.on('authenticated', async (session) => {
-  logger.info('Authenticated successfully');
-  await saveSession('aliya-health-bot', session);
-});
-
 client.on('qr', (qr) => {
   logger.info('QR code generated');
   qrcode.generate(qr, { small: true }, (code) => {
@@ -966,16 +951,6 @@ client.on('qr', (qr) => {
   });
   console.log('Scan the QR code with your WhatsApp app.');
 });
-
-// Load session on startup
-(async () => {
-  const session = await loadSession('aliya-health-bot');
-  if (session) {
-    logger.info('Restoring previous session');
-    client.options.authStrategy.session = session;
-  }
-  await client.initialize();
-})();
 
 client.on('message', async (message) => {
   const userId = message.from;
