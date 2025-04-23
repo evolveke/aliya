@@ -261,6 +261,33 @@ const MEDICATION_STEPS = [
   }
 ];
 
+async function saveSession(userId, sessionData) {
+  try {
+    const query = `
+      INSERT INTO whatsapp_sessions (user_id, session_data)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id)
+      DO UPDATE SET session_data = EXCLUDED.session_data
+      RETURNING id
+    `;
+    const values = [userId, JSON.stringify(sessionData)];
+    const res = await pool.query(query, values);
+    logger.info(`Saved session for ${userId} with ID ${res.rows[0].id}`);
+  } catch (err) {
+    logger.error(`Error saving session for ${userId}: ${err.stack}`);
+  }
+}
+
+async function loadSession(userId) {
+  try {
+    const res = await pool.query('SELECT session_data FROM whatsapp_sessions WHERE user_id = $1', [userId]);
+    return res.rows.length > 0 ? JSON.parse(res.rows[0].session_data) : null;
+  } catch (err) {
+    logger.error(`Error loading session for ${userId}: ${err.stack}`);
+    return null;
+  }
+}
+
 async function initializeDatabase() {
   try {
     await pool.query(`
@@ -279,6 +306,14 @@ async function initializeDatabase() {
         medications TEXT,
         menstrual_cycle_type VARCHAR(20),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(50) UNIQUE NOT NULL,
+        session_data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS symptoms (
@@ -914,6 +949,15 @@ client.on('ready', async () => {
   }
 });
 
+client.on('auth_failure', (msg) => {
+  logger.error(`Authentication failure: ${msg}`);
+});
+
+client.on('authenticated', async (session) => {
+  logger.info('Authenticated successfully');
+  await saveSession('aliya-health-bot', session);
+});
+
 client.on('qr', (qr) => {
   logger.info('QR code generated');
   qrcode.generate(qr, { small: true }, (code) => {
@@ -922,6 +966,16 @@ client.on('qr', (qr) => {
   });
   console.log('Scan the QR code with your WhatsApp app.');
 });
+
+// Load session on startup
+(async () => {
+  const session = await loadSession('aliya-health-bot');
+  if (session) {
+    logger.info('Restoring previous session');
+    client.options.authStrategy.session = session;
+  }
+  await client.initialize();
+})();
 
 client.on('message', async (message) => {
   const userId = message.from;
