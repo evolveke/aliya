@@ -32,12 +32,6 @@ const client = new Client({
   }
 });
 
-// Clear the .wwebjs_auth folder to force new authentication
-const authPath = path.join(__dirname, '.wwebjs_auth');
-if (fs.existsSync(authPath)) {
-  fs.rmSync(authPath, { recursive: true, force: true });
-  logger.info('Cleared .wwebjs_auth folder to force new authentication');
-}
 
 // HTTP server for Render health check
 const server = http.createServer((req, res) => {
