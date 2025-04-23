@@ -8,6 +8,8 @@ logs/
 
 # Node.js dependencies
 node_modules/
+node_modules/
+
 
 # Environment variables
 .env
