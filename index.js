@@ -61,9 +61,7 @@ client.on('qr', (qr) => {
 });
 
 // Rest of your code (client initialization, etc.) follows...
-(async () => {
-  await client.initialize();
-})();
+
 
 // ... (the rest of your code remains unchanged)
 
@@ -319,7 +317,7 @@ async function saveSession(userId, sessionData) {
 }
 
 // Comment out the session loading logic
-/*
+
 (async () => {
   const session = await loadSession('aliya-health-bot');
   if (session) {
@@ -328,7 +326,7 @@ async function saveSession(userId, sessionData) {
   }
   await client.initialize();
 })();
-*/
+
 
 
 async function initializeDatabase() {
@@ -986,14 +984,6 @@ client.on('ready', async () => {
   }
 });
 
-client.on('qr', (qr) => {
-  logger.info('QR code generated');
-  qrcode.generate(qr, { small: true }, (code) => {
-    console.log('QR Code:\n' + code);
-    logger.info('QR Code:\n' + code);
-  });
-  console.log('Scan the QR code with your WhatsApp app.');
-});
 
 client.on('message', async (message) => {
   const userId = message.from;
