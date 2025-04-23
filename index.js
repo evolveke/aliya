@@ -6,6 +6,17 @@ const winston = require('winston');
 const pool = require('./db');
 const schedule = require('node-schedule');
 const { analyzeSymptoms, analyzeHealthAssessment, generateFitnessPlan, generateMealPlan, answerHealthQuestion } = require('./cohere');
+const http = require('http');
+
+// Add this near the top of index.js, after your imports
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Aliya Health Bot is running!');
+});
+
+server.listen(8080, () => {
+  logger.info('HTTP server running on port 8080 for Render health check');
+});
 
 const logger = winston.createLogger({
   level: 'info',
