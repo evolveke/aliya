@@ -7,6 +7,9 @@ const pool = require('./db');
 const schedule = require('node-schedule');
 const { analyzeSymptoms, analyzeHealthAssessment, generateFitnessPlan, generateMealPlan, answerHealthQuestion } = require('./cohere');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -20,20 +23,33 @@ const logger = winston.createLogger({
   ]
 });
 
-const fs = require('fs');
-const path = require('path');
+// Define the client before using it
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    headless: true
+  }
+});
 
+// Clear the .wwebjs_auth folder to force new authentication
 const authPath = path.join(__dirname, '.wwebjs_auth');
 if (fs.existsSync(authPath)) {
   fs.rmSync(authPath, { recursive: true, force: true });
   logger.info('Cleared .wwebjs_auth folder to force new authentication');
 }
 
-// Rest of your code (client initialization, etc.) follows...
-(async () => {
-  await client.initialize();
-})();
+// HTTP server for Render health check
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Aliya Health Bot is running!');
+});
 
+server.listen(8080, () => {
+  logger.info('HTTP server running on port 8080 for Render health check');
+});
+
+// Now set up event handlers and initialize the client
 client.on('qr', (qr) => {
   logger.info('QR code event fired');
   console.log('QR Code Event Fired');
@@ -44,24 +60,12 @@ client.on('qr', (qr) => {
   console.log('Scan the QR code with your WhatsApp app.');
 });
 
-// Add this near the top of index.js, after your imports
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Aliya Health Bot is running!');
-});
+// Rest of your code (client initialization, etc.) follows...
+(async () => {
+  await client.initialize();
+})();
 
-server.listen(8080, () => {
-  logger.info('HTTP server running on port 8080 for Render health check');
-});
-
-
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: true
-  }
-});
+// ... (the rest of your code remains unchanged)
 
 const userStates = new Map();
 
