@@ -7,6 +7,19 @@ const pool = require('./db');
 const schedule = require('node-schedule');
 const { analyzeSymptoms, analyzeHealthAssessment, generateFitnessPlan, generateMealPlan, answerHealthQuestion } = require('./cohere');
 const http = require('http');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
 const fs = require('fs');
 const path = require('path');
 
@@ -16,6 +29,7 @@ if (fs.existsSync(authPath)) {
   logger.info('Cleared .wwebjs_auth folder to force new authentication');
 }
 
+// Rest of your code (client initialization, etc.) follows...
 (async () => {
   await client.initialize();
 })();
@@ -40,17 +54,6 @@ server.listen(8080, () => {
   logger.info('HTTP server running on port 8080 for Render health check');
 });
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'logs/app.log' }),
-    new winston.transports.Console()
-  ]
-});
 
 const client = new Client({
   authStrategy: new LocalAuth(),
