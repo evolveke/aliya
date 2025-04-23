@@ -60,10 +60,7 @@ client.on('qr', (qr) => {
   console.log('Scan the QR code with your WhatsApp app.');
 });
 
-// Rest of your code (client initialization, etc.) follows...
 
-
-// ... (the rest of your code remains unchanged)
 
 const userStates = new Map();
 
@@ -316,16 +313,6 @@ async function saveSession(userId, sessionData) {
   }
 }
 
-// Comment out the session loading logic
-
-(async () => {
-  const session = await loadSession('aliya-health-bot');
-  if (session) {
-    logger.info('Restoring previous session');
-    client.options.authStrategy.session = session;
-  }
-  await client.initialize();
-})();
 
 
 
@@ -1781,6 +1768,18 @@ I'll remind you as scheduled. Use /medication to add or update reminders, or /he
     logger.error(`Error handling message from ${userId}: ${err.stack}`);
     await message.reply('Sorry, something went wrong. Please try again or use /help for assistance.');
   }
+});
+
+// Clean up Puppeteer on exit
+process.on('exit', async () => {
+  logger.info('Closing Puppeteer browser on exit');
+  await client.destroy(); // This closes the Puppeteer browser
+});
+
+process.on('SIGINT', async () => {
+  logger.info('Received SIGINT, closing Puppeteer browser');
+  await client.destroy();
+  process.exit(0);
 });
 
 client.initialize().catch(err => {
