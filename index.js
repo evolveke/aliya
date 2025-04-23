@@ -10,15 +10,15 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-// Add this before client.initialize()
 const authPath = path.join(__dirname, '.wwebjs_auth');
 if (fs.existsSync(authPath)) {
   fs.rmSync(authPath, { recursive: true, force: true });
   logger.info('Cleared .wwebjs_auth folder to force new authentication');
 }
 
-// Ensure session loading is still disabled (as per your previous change)
-await client.initialize();
+(async () => {
+  await client.initialize();
+})();
 
 client.on('qr', (qr) => {
   logger.info('QR code event fired');
