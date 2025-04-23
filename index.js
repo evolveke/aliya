@@ -289,15 +289,19 @@ async function saveSession(userId, sessionData) {
   }
 }
 
-async function loadSession(userId) {
-  try {
-    const res = await pool.query('SELECT session_data FROM whatsapp_sessions WHERE user_id = $1', [userId]);
-    return res.rows.length > 0 ? JSON.parse(res.rows[0].session_data) : null;
-  } catch (err) {
-    logger.error(`Error loading session for ${userId}: ${err.stack}`);
-    return null;
+// Comment out the session loading logic
+/*
+(async () => {
+  const session = await loadSession('aliya-health-bot');
+  if (session) {
+    logger.info('Restoring previous session');
+    client.options.authStrategy.session = session;
   }
-}
+  await client.initialize();
+})();
+*/
+// Replace with:
+await client.initialize();
 
 async function initializeDatabase() {
   try {
