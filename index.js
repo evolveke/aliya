@@ -7,6 +7,28 @@ const pool = require('./db');
 const schedule = require('node-schedule');
 const { analyzeSymptoms, analyzeHealthAssessment, generateFitnessPlan, generateMealPlan, answerHealthQuestion } = require('./cohere');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+// Add this before client.initialize()
+const authPath = path.join(__dirname, '.wwebjs_auth');
+if (fs.existsSync(authPath)) {
+  fs.rmSync(authPath, { recursive: true, force: true });
+  logger.info('Cleared .wwebjs_auth folder to force new authentication');
+}
+
+// Ensure session loading is still disabled (as per your previous change)
+await client.initialize();
+
+client.on('qr', (qr) => {
+  logger.info('QR code event fired');
+  console.log('QR Code Event Fired');
+  qrcode.generate(qr, { small: true }, (code) => {
+    logger.info('QR Code:\n' + code);
+    console.log('QR Code:\n' + code);
+  });
+  console.log('Scan the QR code with your WhatsApp app.');
+});
 
 // Add this near the top of index.js, after your imports
 const server = http.createServer((req, res) => {
@@ -300,8 +322,7 @@ async function saveSession(userId, sessionData) {
   await client.initialize();
 })();
 */
-// Replace with:
-await client.initialize();
+
 
 async function initializeDatabase() {
   try {
